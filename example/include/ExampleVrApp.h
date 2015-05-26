@@ -20,6 +20,8 @@
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <map>
+#include "example\include\GPUMesh.H"
+#include "example\include\GLSLProgram.H"
 
 class ExampleVrApp : public MinVR::AbstractMVRApp {
 public:
@@ -35,6 +37,7 @@ private:
 	void initGL();
 	void initVBO(int threadId);
 	void initLights();
+	std::shared_ptr<GPUMesh> cubeMesh;
 
 	std::map<int, GLuint> _vboId;
 };

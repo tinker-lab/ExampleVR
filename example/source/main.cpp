@@ -20,7 +20,7 @@ main(int argc, char** argv)
 	engine->init(argc, argv);
 	MinVR::AbstractMVRAppRef app(new ExampleVrApp());
 	engine->runApp(app);
-	delete engine;
+	//delete engine;
 
 	return 0;
 }

@@ -7,6 +7,8 @@
  */
 
 #include <example/include/ExampleVrApp.h>
+#include "example/include/GLSLProgram.H"
+#include "example/include/GPUMesh.H"
 
 using namespace MinVR;
 
@@ -52,6 +54,9 @@ void ExampleVrApp::initVBO(int threadId)
 	//  |/      |/
 	//  v2------v3
 
+	// use the mesh class
+	
+
 	// vertex coords array for glDrawArrays() =====================================
 	// A cube has 6 sides and each side has 2 triangles, therefore, a cube consists
 	// of 36 vertices (6 sides * 2 tris * 3 vertices = 36 vertices). And, each
@@ -74,6 +79,8 @@ void ExampleVrApp::initVBO(int threadId)
 
 							1.0f,-1.0f,-1.0f,  -1.0f,-1.0f,-1.0f,  -1.0f, 1.0f,-1.0f,      // v4-v7-v6 (back)
 						   -1.0f, 1.0f,-1.0f,   1.0f, 1.0f,-1.0f,   1.0f,-1.0f,-1.0f };    // v6-v5-v4
+
+
 
 	// normal array
 	GLfloat normals[]   = { 0, 0, 1,   0, 0, 1,   0, 0, 1,      // v0-v1-v2 (front)
@@ -113,6 +120,31 @@ void ExampleVrApp::initVBO(int threadId)
 							0, 0, 1,   0, 0, 0,   0, 1, 0,      // v4-v7-v6 (back)
 							0, 1, 0,   0, 1, 1,   0, 0, 1 };    // v6-v5-v4
 
+	std::vector<int> cubeIndices;
+	std::vector<GPUMesh::Vertex> cubeData;
+	GPUMesh::Vertex vert;
+	for(int i=0; i < 108; i = i + 3 ) {
+		vert.position = glm::dvec3(vertices[i], vertices[i+1], vertices[i+2]);
+		vert.normal = glm::normalize(glm::dvec3(normals[i], normals[i+1], normals[i+2])); // normalize not technically necessary here
+		vert.texCoord0 = glm::dvec2(0.5, 0.5);	//just whatever 
+		cubeData.push_back(vert);
+		cubeIndices.push_back(cubeData.size() - 1);
+	}
+
+	//GPUMesh::Vertex {
+	//	glm::dvec3 position; //3 doubles
+	//	glm::dvec3 normal; // 3 doubles
+	//	glm::dvec2 texCoord0; // 2 doubles
+	//};
+	
+	const int vertexByteSize = sizeof(GPUMesh::Vertex)*cubeData.size();
+	const int indexByteSize = sizeof(int)*cubeIndices.size();
+
+	//GPUMesh(GLenum usage, int allocateVertexByteSize, int allocateIndexByteSize, int vertexOffset, const std::vector<Vertex> &data, int indexByteSize=0, int* index=nullptr);
+	cubeMesh.reset(new GPUMesh(GL_STATIC_DRAW, vertexByteSize, indexByteSize, 0, cubeData, indexByteSize, &cubeIndices[0]));
+
+
+
 
     // create vertex buffer objects, you need to delete them when program exits
     // Try to put both vertex coords array, vertex normal array and vertex color in the same buffer object.
@@ -120,13 +152,14 @@ void ExampleVrApp::initVBO(int threadId)
     // Copy actual data with 2 calls of glBufferSubDataARB, one for vertex coords and one for normals.
     // target flag is GL_ARRAY_BUFFER_ARB, and usage flag is GL_STATIC_DRAW_ARB
 	_vboId[threadId] = GLuint(0);
+	/*
 	glGenBuffersARB(1, &_vboId[threadId]);
     glBindBufferARB(GL_ARRAY_BUFFER_ARB, _vboId[threadId]);
     glBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(vertices)+sizeof(normals)+sizeof(colors), 0, GL_STATIC_DRAW_ARB);
     glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, sizeof(vertices), vertices);                             // copy vertices starting from 0 offest
     glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sizeof(vertices), sizeof(normals), normals);                // copy normals after vertices
     glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sizeof(vertices)+sizeof(normals), sizeof(colors), colors);  // copy colours after normals
-
+	*/
 	GLenum err;
 	if((err = glGetError()) != GL_NO_ERROR) {
 		std::cout << "GLERROR initVBO: "<<err<<std::endl;
@@ -192,29 +225,35 @@ void ExampleVrApp::drawGraphics(int threadId, MinVR::AbstractCameraRef camera,
 		std::cout << "GLERROR: "<<err<<std::endl;
 	}
 
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, _vboId[threadId]);
+	const int numIndices = (int)(cubeMesh->getFilledIndexByteSize()/sizeof(int));
 
-    // enable vertex arrays
-    glEnableClientState(GL_NORMAL_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
-    glEnableClientState(GL_VERTEX_ARRAY);
+	
+	//glBindBufferARB(GL_ARRAY_BUFFER_ARB, _vboId[threadId]);
 
-    // before draw, specify vertex and index arrays with their offsets
-    glNormalPointer(GL_FLOAT, 0, (void*)(sizeof(GLfloat)*108));
-    glColorPointer(3, GL_FLOAT, 0, (void*)((sizeof(GLfloat)*108)+(sizeof(GLfloat)*108)));
-    glVertexPointer(3, GL_FLOAT, 0, 0);
+ //   // enable vertex arrays
+ //   glEnableClientState(GL_NORMAL_ARRAY);
+ //   glEnableClientState(GL_COLOR_ARRAY);
+ //   glEnableClientState(GL_VERTEX_ARRAY);
+
+ //   // before draw, specify vertex and index arrays with their offsets
+ //   glNormalPointer(GL_FLOAT, 0, (void*)(sizeof(GLfloat)*108));
+ //   glColorPointer(3, GL_FLOAT, 0, (void*)((sizeof(GLfloat)*108)+(sizeof(GLfloat)*108)));
+ //   glVertexPointer(3, GL_FLOAT, 0, 0);
 
 	glm::dmat4 translate = glm::translate(glm::dmat4(1.0f), glm::dvec3(0.0f, 0.0f, -5.0f));
 	glm::dvec2 rotAngles(-20.0, 45.0);
 	glm::dmat4 rotate1 = glm::rotate(translate, rotAngles.y, glm::dvec3(0.0,1.0,0.0));
 	camera->setObjectToWorldMatrix(glm::rotate(rotate1, rotAngles.x, glm::dvec3(1.0,0,0)));
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+	//glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    glDisableClientState(GL_VERTEX_ARRAY);  // disable vertex arrays
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
+	glBindVertexArray(cubeMesh->getVAOID());
+	glDrawArrays(GL_TRIANGLES, 0, numIndices);
 
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+ //   glDisableClientState(GL_VERTEX_ARRAY);  // disable vertex arrays
+ //   glDisableClientState(GL_COLOR_ARRAY);
+ //   glDisableClientState(GL_NORMAL_ARRAY);
+
+ //   glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 
 	/*
 	camera->setObjectToWorldMatrix(glm::mat4(1.0));

@@ -24,9 +24,13 @@ endif()
 #This is how you specific source file individually
 set (SOURCEFILES 
 		example/source/main.cpp
-		example/source/ExampleVrApp.cpp)
+		example/source/ExampleVrApp.cpp
+		example/source/GPUMesh.cpp
+		example/source/GLSLProgram.cpp)
 set (HEADERFILES 
-		example/include/ExampleVrApp.h)
+		example/include/ExampleVrApp.h
+		example/include/GPUMesh.H
+		example/include/GLSLProgram.H)
 source_group("Header Files" FILES ${HEADERFILES})
 
 ############################################################
@@ -45,6 +49,10 @@ include_directories(${MinVR_INCLUDE_DIRS})
 ############################################################
 
 set (CMAKE_VERBOSE_MAKEFILE TRUE)
+
+if(USE_BOOST)
+	add_definitions(-DUSE_BOOST)
+endif()
 
 # Used for compiling in subdirectories of the project
 include_directories (

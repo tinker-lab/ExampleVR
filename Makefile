@@ -41,9 +41,24 @@ gen:
 	cd ./build/Debug; cmake -DCMAKE_BUILD_TYPE=Debug ../../
 	cd ../$(DIRNAME)_eclipse; cmake -DCMAKE_BUILD_TYPE=Debug $(CURDIR) -G "Eclipse CDT4 - Unix Makefiles" -DCMAKE_ECLIPSE_VERSION=4.3
     else ifeq ($(ARCH), WIN32)
-	cd ./build; cmake ../ -G "Visual Studio 11 Win64"
+	cd ./build; cmake ../ -G "Visual Studio 10 Win64"
     else ifeq ($(ARCH), OSX)
 	cd ./build; cmake ../ -G Xcode
+    endif
+
+use_boost:
+	mkdir -p ./build
+   ifeq ($(ARCH), linux)
+	mkdir -p ./build/Release
+	mkdir -p ./build/Debug
+	mkdir -p ../$(DIRNAME)_eclipse
+	cd ./build/Release; cmake -DUSE_BOOST=ON -DCMAKE_BUILD_TYPE=Release ../../
+	cd ./build/Debug; cmake -DUSE_BOOST=ON -DCMAKE_BUILD_TYPE=Debug ../../
+	cd ../$(DIRNAME)_eclipse; cmake -DUSE_BOOST=ON -DCMAKE_BUILD_TYPE=Debug $(CURDIR) -G "Eclipse CDT4 - Unix Makefiles" -DCMAKE_ECLIPSE_VERSION=4.3
+    else ifeq ($(ARCH), WIN32)
+	cd ./build; cmake ../ -DUSE_BOOST=ON -G "Visual Studio 10 Win64"
+    else ifeq ($(ARCH), OSX)
+	cd ./build; cmake ../ -DUSE_BOOST=ON -G Xcode
     endif
 
 debug:
